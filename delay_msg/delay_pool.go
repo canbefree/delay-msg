@@ -17,7 +17,7 @@ var (
 
 type DelayPool interface {
 	// 每隔多少分钟一次 从pool获取数据
-	InitPrepareJob(context.Context) error
+	InitPrepareJob(context.Context) chan error
 }
 
 type RedisDataList struct {
@@ -147,7 +147,8 @@ func (pool *RedisPool) InitPrepareJob(ctx context.Context) chan error {
 				ch <- err
 			}
 			for _, job := range jobs {
-				err := pool.PrepareQueue.Pushlish(ctx, job)
+				// publish
+				err := pool.PrepareQueue.Push(ctx, job)
 				if err == nil {
 					pool.RedisZSet.Remove(ctx, job.ID)
 				}

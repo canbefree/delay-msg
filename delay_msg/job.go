@@ -12,7 +12,7 @@ const (
 
 type Job struct {
 	// 任务ID
-	ID uint64
+	ID int64
 	// 任务主题
 	Topic string
 	// 唤醒时间

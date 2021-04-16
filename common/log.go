@@ -16,4 +16,8 @@ func (log *DefaultLog) Errorf(ctx context.Context, format string, params ...inte
 	fmt.Errorf(format, params...)
 }
 
+func (log *DefaultLog) Infof(ctx context.Context, format string, params ...interface{}) {
+	fmt.Printf(format, params...)
+}
+
 var Log = new(DefaultLog)

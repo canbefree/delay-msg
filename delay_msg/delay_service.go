@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/canbefree/delay-msg/spi"
+	"github.com/canbefree/delay-msg/infra"
 )
 
 type DelayServer struct {
@@ -21,7 +21,7 @@ func NewDelayServer(ctx context.Context) *DelayServer {
 	return &DelayServer{
 		lock: sync.Mutex{},
 		List: list.New(),
-		Pool: NewRedisPool(spi.NewRedisPool()),
+		Pool: NewRedisPool(infra.NewRedisPool()),
 	}
 }
 

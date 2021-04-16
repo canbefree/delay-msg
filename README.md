@@ -10,6 +10,13 @@
 ### 原设计思路
 
 
+### 目录结构
+infra: 基础设施层
+delay_msg: 核心层
+common: 公共层
+config: 配置层
+
+
 Job
 id // job标识
 topic // 主题 发布订阅主题

@@ -1,4 +1,4 @@
-package spi_queue
+package infra_subpub
 
 import (
 	"context"
@@ -11,20 +11,21 @@ import (
 )
 
 //
-type RedisQueue struct {
-	Name      string
+type RedisSubPub struct {
+	Topic     string
 	RedisPool *redis.Pool
 }
 
 // 设置队列tag
-func (q *RedisQueue) SetName(ctx context.Context, name string) error {
-	q.Name = name
+func (q *RedisSubPub) SetName(ctx context.Context, topic string) error {
+	q.Topic = topic
 	return nil
 }
 
 // 发布
-func (q *RedisQueue) Publish(ctx context.Context, job *delay_msg.Job) error {
+func (q *RedisSubPub) Publish(ctx context.Context, job *delay_msg.Job) error {
 	conn := q.RedisPool.Get()
+	defer conn.Close()
 	jobS, err := json.Marshal(job)
 	if err != nil {
 		return err
@@ -33,8 +34,7 @@ func (q *RedisQueue) Publish(ctx context.Context, job *delay_msg.Job) error {
 }
 
 // 订阅
-func (q *RedisQueue) Subscribe(ctx context.Context, handle func()) (chan *delay_msg.Job, chan error) {
-	jobCh := make(chan *delay_msg.Job)
+func (q *RedisSubPub) Subscribe(ctx context.Context, handle func(*delay_msg.Job) error) chan error {
 	errCh := make(chan error)
 
 	conn := q.RedisPool.Get()
@@ -42,25 +42,33 @@ func (q *RedisQueue) Subscribe(ctx context.Context, handle func()) (chan *delay_
 	psc.Subscribe(q.getTopic())
 
 	go func() {
+		defer conn.Close()
 		for {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
 				var job *delay_msg.Job
+				common.Log.Infof(ctx, "message")
 				err := json.Unmarshal(v.Data, &job)
 				if err != nil {
-					common.Log.Errorf(ctx, "RedisQueue,Subscribe,err:%v", err)
+					common.Log.Errorf(ctx, "RedisSubPub,Subscribe,err:%v", err)
 					errCh <- err
 				}
-				jobCh <- job
+				go func() {
+					if err := handle(job); err != nil {
+						errCh <- err
+					}
+
+				}()
 			case redis.Subscription:
+				common.Log.Infof(ctx, "channel:%v", v.Channel)
 			case redis.Error:
 				errCh <- v
 			}
 		}
 	}()
-	return jobCh, errCh
+	return errCh
 }
 
-func (q *RedisQueue) getName() string {
-	return fmt.Sprintf("topic_%v", q.Name)
+func (q *RedisSubPub) getTopic() string {
+	return fmt.Sprintf("topic_%v", q.Topic)
 }

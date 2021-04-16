@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/canbefree/delay-msg/spi"
+	"github.com/canbefree/delay-msg/infra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -18,7 +18,7 @@ type RedisTestSuite struct {
 }
 
 func (suite *RedisTestSuite) SetupTest() {
-	redisPool := spi.NewRedisPool()
+	redisPool := infra.NewRedisPool()
 	suite.redisZSet = &RedisZSet{
 		RedisPool: redisPool,
 		Key:       "test_key",

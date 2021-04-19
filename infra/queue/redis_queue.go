@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/canbefree/delay-msg/delay_msg"
 	"github.com/gomodule/redigo/redis"
@@ -28,7 +29,7 @@ func (q *RedisQueue) SetName(ctx context.Context, name string) error {
 	return nil
 }
 
-// 发布
+// Push
 func (q *RedisQueue) Push(ctx context.Context, job *delay_msg.Job) error {
 	conn := q.RedisPool.Get()
 	defer conn.Close()
@@ -43,8 +44,8 @@ func (q *RedisQueue) Push(ctx context.Context, job *delay_msg.Job) error {
 	return nil
 }
 
-// 订阅
-func (q *RedisQueue) PopWithCallback(ctx context.Context, handle func(*delay_msg.Job) error) error {
+// Pop
+func (q *RedisQueue) Pop(ctx context.Context, handle func(*delay_msg.Job) error) error {
 	conn := q.RedisPool.Get()
 	defer conn.Close()
 	bts, err := redis.Bytes(conn.Do("RPOP", q.getName()))
@@ -56,6 +57,33 @@ func (q *RedisQueue) PopWithCallback(ctx context.Context, handle func(*delay_msg
 		return err
 	}
 	return handle(job)
+}
+
+// 订阅
+func (q *RedisQueue) Subscribe(ctx context.Context, handler interface{}, job *delay_msg.Job) chan error {
+	var errCh = make(chan error)
+	go func() {
+		conn := q.RedisPool.Get()
+		defer conn.Close()
+		defer func() {
+			close(errCh)
+		}()
+		for {
+			bts, err := redis.Bytes(conn.Do("RPOP", q.getName()))
+			var job = &delay_msg.Job{}
+			json.Unmarshal(bts, job)
+			rMethod := reflect.ValueOf(handler)
+			jobV := reflect.ValueOf(job)
+			ret := rMethod.Call([]reflect.Value{jobV})
+			if err != nil {
+				errCh <- err
+			}
+			if ret[0].Interface() != nil {
+				errCh <- ret[0].Interface().(error)
+			}
+		}
+	}()
+	return errCh
 }
 
 func (q *RedisQueue) getName() string {

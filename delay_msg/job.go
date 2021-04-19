@@ -24,12 +24,23 @@ type Job struct {
 	UpdateAt  int64
 }
 
+type JobServiceIFace interface {
+	// 添加工作
+	AddJob(ctx context.Context, job *Job) error
+	// prepare 工作
+	PrePareJob(ctx context.Context) error
+}
+
 type JobService struct {
 }
 
-// func (js *JobService) AddJob(context.Context){
+func (js *JobService) AddJob(context.Context) {
 
-// }
+}
+
+func (js *JobService) PrePareJob(context.Context) {
+
+}
 
 type JobRepo interface {
 	AddJob(ctx context.Context, job *Job) error

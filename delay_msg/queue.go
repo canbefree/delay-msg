@@ -5,10 +5,10 @@ import "context"
 type QueueIFace interface {
 	// 设置队列Name
 	SetName(ctx context.Context, name string) error
-	// Push
+	// 推送
 	Push(ctx context.Context, job *Job) error
-	// Pop
-	Pop(ctx context.Context, handle func(*Job) error) error
+	// 处理
+	Pop(ctx context.Context, handler func(job *Job) error) error
 }
 
 // 预备消费队列

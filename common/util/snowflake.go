@@ -16,7 +16,7 @@ func GenerateSnowflake() int64 {
 	var nodeIndex int64
 	once.Do(func() {
 		lock.Lock()
-		nodeIndex = getRandNode() % 1000
+		nodeIndex = getRandNode() % (-1 ^ (-1 << snowflake.NodeBits))
 		lock.Unlock()
 	})
 	lock.Lock()
@@ -30,5 +30,9 @@ func GenerateSnowflake() int64 {
 
 func getRandNode() int64 {
 	rand.Seed(time.Now().UnixNano())
-	return rand.Int63()
+	r := rand.Int63()
+	if r == 0 {
+		return getRandNode()
+	}
+	return r
 }

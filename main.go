@@ -17,7 +17,9 @@ func main() {
 	job.InvokerTime = time.Now().Unix() + 600
 	job.CreatedAt = time.Now().Unix()
 
-	// add job
+	// add job to db
+	service := &delay_msg.JobService{}
+	service
 
 	// push into redis
 	// update job
